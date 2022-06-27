@@ -8,73 +8,15 @@ import torch.nn as nn
 import torch
 from torch import optim
 from torch import relu as relu
+from jax import random
+from neural_tangents import stax
+
 
 
 ###### Models ############
 def HalfMSE(output, target):
     loss = (0.5) * torch.mean((output - target) ** 2)
     return loss
-
-#Neural Tanget
-class Student_NT(nn.Module):
-
-    def __init__(self, K, D, std=0.01):
-        """ initialisation of a student with:
-        - K hidden nodes
-        - N input dimensions """
-        print("Creating a Neural Network ")
-        super(Student_NT, self).__init__()
-        self.a0 = (torch.randn(1,1,K)) #.cuda()
-        a0 = torch.from_numpy(np.load('saved_values/a0.npy'))
-        self.a0 = a0
-        fc1_w = torch.from_numpy(np.load('saved_values/fc1.npy'))
-        fc2_w = torch.from_numpy(np.load('saved_values/fc2.npy'))
-        G = torch.from_numpy(np.load('saved_values/G.npy'))
-        self.G = G
-        self.g = nn.ReLU()
-        self.K = K
-        self.loss = nn.MSELoss()
-        #First layer weights are fixed!
-        # self.w = np.random.randn(D, K)
-        # norm = np.linalg.norm(self.w,axis=0,keepdims=True)
-        # self.w = self.w/(norm)
-        # self.w = torch.from_numpy(self.w)
-        self.w = fc1_w
-        self.w = self.w.float()
-        self.w = self.w #.cuda()
-        # self.w = self.w.T
-        self.fc1 = nn.Linear(D, K, bias=False)
-        self.fc1.weight = nn.Parameter(self.w, requires_grad=False)  # Fix initialized weight
-        self.fc2 = nn.Linear(K, 1, bias=True)
-        nn.init.normal_(fc2_w, std=std)
-        #torch.nn.init.xavier_uniform_(self.fc2.weight)
-        #torch.nn.init.xavier_uniform_(self.fc1.weight)
-        # self.G = (torch.randn(K, D)) #.cuda()
-        # np.save('/content/gdrive/MyDrive/G.npy', (self.G).detach().numpy())
-        # np.save('/content/gdrive/MyDrive/a0.npy', (self.a0).detach().numpy())
-        # np.save('/content/gdrive/MyDrive/fc1.npy', (self.fc1.weight).detach().numpy())
-        # np.save('/content/gdrive/MyDrive/fc2.npy', (self.fc2.weight).detach().numpy())
-
-    def forward(self, x):
-        # input to hidden
-        x_ = x #/ torch.mean(torch.sqrt(torch.linalg.norm(x, axis=0, keepdims=True)))
-        z = self.fc1(x)
-        q = self.g(z)
-        RF = self.fc2(q)
-        zero_one_mat = torch.sign(z)
-        # print(zero_one_mat.shape)
-        zero_one_mat_exp = torch.unsqueeze(zero_one_mat, 2)
-        # print(zero_one_mat_exp.shape)
-        zero_one_mat_exp = zero_one_mat_exp.reshape((zero_one_mat_exp.shape[0], 1, self.K))
-        U = torch.multiply(zero_one_mat_exp,self.a0)
-        q2 = torch.tensordot(U,self.G,dims=([2],[0]))
-        x_ = x_ #/ torch.linalg.norm(x_,axis=0,keepdims=True) # bigger norm input would cause the NT-matrix to dominate the output which lead to worse learning
-        temp = torch.unsqueeze(x_, 2)
-        aux_data = temp.reshape((temp.shape[0],1,temp.shape[1]))  # bs x 1 x d
-        temp = torch.multiply(q2, aux_data)
-        NT = temp.sum(2)  # bs x num_class
-        x = NT + RF
-        return x
 
 # 2 layer NN
 class Student(nn.Module):
@@ -118,7 +60,7 @@ class Student(nn.Module):
 
 
 # Oracle
-def oracle(X, mu,fraction):
+def oracle(X, mu, fraction):
     """
     This function implements the 'oracle' which is defined as a network "with knowledge of the means of
     the mixture that assigns to each input the label of the nearest mean".
@@ -330,14 +272,16 @@ def log_sigmas(num_sigmas):
     sigma = np.round(np.append(sigma1, np.append(sigma2, sigma3)), 5)
     return sigma
 
+
 print("Start of script...")
 N = 50000
 dim_NN = 1000
 dim_RF = 1000
 dim_oracle = 1000
 sigma = 0.01
-nr_of_drawn_samples = np.round(np.linspace(0,N,num=30),0)
+nr_of_drawn_samples = np.round(np.linspace(0, N, num=30), 0)
 fraction_of_drawn_samples = np.zeros((len(nr_of_drawn_samples)))
+"""
 ## ORACLE:
 print("Run oracle....")
 oracle_pred = np.zeros((len(nr_of_drawn_samples), int(N)))
@@ -378,7 +322,7 @@ criterion = student.loss
 ######################################################################
 
 for i in range(0, len(nr_of_drawn_samples)):
-    X_, Y_, mu = make_GMM(dim=dim_RF, N=N, var=sigma, plot=False)
+    X, Y, mu = make_GMM(dim=dim_RF, N=N, var=sigma, plot=False)
     fraction_of_drawn_samples[i] = (nr_of_drawn_samples[i] / N) * 100
     draw_index = np.random.choice(X.shape[0], int(nr_of_drawn_samples[i]), replace=False)
     Y_drawn = Y[draw_index] * (-1)
@@ -484,13 +428,52 @@ for i in range(0, len(nr_of_drawn_samples)):
                                                                                               fraction_of_drawn_samples[i],
                                                                                               eg))
         print("---------------------------------------------------------")
+"""
+
+##Neural Tangent
+NT_error = np.zeros((len(nr_of_drawn_samples)))
+init_fn, apply_fn, kernel_fn = stax.serial(
+    stax.Dense(12), stax.Relu(),
+    stax.Dense(1)
+)
+for i in range(0, len(nr_of_drawn_samples)):
+    X, Y, mu = make_GMM(dim=dim_RF, N=N, var=sigma, plot=False)
+    fraction_of_drawn_samples[i] = (nr_of_drawn_samples[i] / N) * 100
+    draw_index = np.random.choice(X.shape[0], int(nr_of_drawn_samples[i]), replace=False)
+    Y_drawn = Y[draw_index] * (-1)
+    Y[draw_index] = Y_drawn
+    X_train, X_val, Y_train, Y_val = make_splits(X, Y)
+    n = len(Y_train)
+    kernel = kernel_fn(X_train.numpy(), X_train.numpy(), 'ntk')
+    Y_train = np.reshape(Y_train, (3300, 1))
+    predict_fn = stax.predict.gradient_descent_mse_ensemble(kernel_fn, X_train, Y_train)
+    preds = predict_fn(x_test=X_val, get='ntk')
+    preds = torch.from_numpy(np.array(preds))
+    # print(preds)
+    Y_val = torch.from_numpy(Y_val)
+    with torch.no_grad():
+        # preds = student(X_val)
+        preds = preds[:,0]
+        # print(preds.shape)
+        # print(Y_val.shape)
+        # preds[preds==0] = -1
+        # Y_val[Y_val==0] = -1
+        eg =  nn.HalfMSE(preds, Y_val)
+        # calculate the classification error with the predictions
+        eg_class = 1 - torch.relu(torch.sign(preds)*Y_val)
+        # eg_class = (preds != Y_val)
+        eg_class = eg_class.sum()/float(preds.shape[0])
+        #print("preds:{}, y_val:{}".format(preds,Y_val))
+        NT_error[i] = eg_class
+        print("Test Data: Classification Error: {}; Variance: {}; halfMSE-Loss:{}".format(np.round(NT_error[i], 3),fraction_of_drawn_samples[i],eg))
+        print("---------------------------------------------------------")
 print("NN Training is finished!")
 print("Save all results")
-with open('/home/apdl007/Paper2_extension/oracle_error.txt', 'w') as f:
-    np.savetxt(f, oracle_error)
-with open('/home/apdl007/Paper2_extension/2LNN_error.txt', 'w') as f:
-    np.savetxt(f, NN_error)
-with open('/home/apdl007/Paper2_extension/RF_error.txt', 'w') as f:
-    np.savetxt(f, RF_error)
-with open('/home/apdl007/Paper2_extension/fraction.txt', 'w') as f:
-        np.savetxt(f, fraction_of_drawn_samples)
+with open('/home/apdl007/Paper2_extension/NT_error.txt', 'w') as f:
+    np.savetxt(f, NT_error)
+#with open('/home/apdl007/Paper2_extension/2LNN_error.txt', 'w') as f:
+#    np.savetxt(f, NN_error)
+#with open('/home/apdl007/Paper2_extension/RF_error.txt', 'w') as f:
+#    np.savetxt(f, RF_error)
+#with open('/home/apdl007/Paper2_extension/fraction.txt', 'w') as f:
+#    np.savetxt(f, fraction_of_drawn_samples)
