@@ -265,7 +265,7 @@ def log_sigmas(num_sigmas):
     sigma = np.round(np.append(sigma1, np.append(sigma2, sigma3)), 5)
     return sigma
 
-
+print("Start of script...")
 N = 5000
 dim_NN = 100
 dim_RF = 100
@@ -274,6 +274,7 @@ sigma = 0.1
 nr_of_drawn_samples = np.round(np.linspace(0,N,num=30),0)
 fraction_of_drawn_samples = np.zeros((len(nr_of_drawn_samples)))
 ## ORACLE:
+print("Run oracle....")
 oracle_pred = np.zeros((len(nr_of_drawn_samples), int(N)))
 oracle_error = np.zeros((len(nr_of_drawn_samples)))
 for i in range(0, len(nr_of_drawn_samples)):
@@ -288,11 +289,13 @@ for i in range(0, len(nr_of_drawn_samples)):
     oracle_error[i] = sklearn.metrics.zero_one_loss(Y, labels, normalize=True, sample_weight=None)
     oracle_pred[i, :] = labels
     print('Classifiaction error: {} for sigma: {}'.format(np.round(oracle_error[i], 3),fraction_of_drawn_samples[i]))
+print("Oracle calcluations are finished!...")
 #label = [-1,1]
 #colors = ['red','blue']
 #fig = plt.figure(figsize=(4,4))
 #plt.scatter(X[:,0], X[:,1], c=Y, cmap=matplotlib.colors.ListedColormap(colors))
 ## RANDOM FEATURES
+print("Start Random Features Training...")
 P = 2 * dim_RF  # projection dimension
 reg_RF = 0.0  # regulaization parameter
 lr = 0.5  # learning rate
@@ -332,6 +335,8 @@ for i in range(0, len(nr_of_drawn_samples)):
         student.zero_grad()
         preds = student(inputs)
         loss = HalfMSE(preds, targets)
+        if j% 500 ==0: #print train loss every 100 steps
+          print("Train loss: {}".format(loss))
         loss.backward()
         torch.nn.utils.clip_grad_norm_(student.parameters(), 10.0)
         optimizer.step()
@@ -352,9 +357,10 @@ for i in range(0, len(nr_of_drawn_samples)):
                                                                                           np.round(sigma[i], 3), eg))
         print("---------------------------------------------------------")
 
-
+print("Random Features Training is finished!..")
 
 ## NEURAL NETWORK
+print("Start Neural Network Training...")
 K = 12  # number of hidden neurons
 lr_NN = 0.1  # learning rate
 reg_NN = 0.0  # regulaization parameter
@@ -392,8 +398,8 @@ for i in range(0, len(nr_of_drawn_samples)):
         student.zero_grad()
         preds = student(inputs)
         loss = HalfMSE(preds, targets)
-        # if j% 500 ==0: #print train loss every 100 steps
-        #  print("Train loss: {}".format(loss))
+        if j% 500 ==0: #print train loss every 100 steps
+          print("Train loss: {}".format(loss))
         loss.backward()
         torch.nn.utils.clip_grad_norm_(student.parameters(), 5.0)
         optimizer.step()
@@ -413,10 +419,13 @@ for i in range(0, len(nr_of_drawn_samples)):
                                                                                               np.round(sigma[i], 3),
                                                                                               eg))
         print("---------------------------------------------------------")
-
+print("NN Training is finished!")
+print("Save all results")
 with open('/home/apdl006/Practical/oracle_error.txt', 'w') as f:
     np.savetxt(f, oracle_error)
 with open('/home/apdl006/Practical/2LNN_error.txt', 'w') as f:
     np.savetxt(f, NN_error)
 with open('/home/apdl006/Practical/RF_error.txt', 'w') as f:
     np.savetxt(f, RF_error)
+with open('/home/apdl006/Practical/fraction.txt', 'w') as f:
+        np.savetxt(f, fraction_of_drawn_samples)
