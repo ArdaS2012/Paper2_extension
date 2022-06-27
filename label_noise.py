@@ -334,7 +334,7 @@ for i in range(0, len(nr_of_drawn_samples)):
         inputs = (X_train[j, :]).float()
         student.zero_grad()
         preds = student(inputs)
-        loss = HalfMSE(preds, targets)
+        loss = criterion(preds, targets)
         if j% 500 ==0: #print train loss every 100 steps
           print("Train loss: {}".format(loss))
         loss.backward()
@@ -347,13 +347,13 @@ for i in range(0, len(nr_of_drawn_samples)):
     with torch.no_grad():
         preds = student(X_val)
         preds = preds[:, 0]
-        eg = HalfMSE(preds, Y_val)
+        eg = criterion(preds, Y_val)
         # calculate the classification error with the predictions
         eg_class = 1 - torch.relu(torch.sign(preds) * Y_val)
         eg_class = eg_class.sum() / float(preds.shape[0])
         # print("preds:{}, y_val:{}".format(preds,Y_val))
         RF_error[i] = eg_class
-        print("Test Data: Classification Error: {}; Fraction of noise: {}; halfMSE-Loss:{}".format(np.round(RF_error[i], 3),
+        print("Test Data: Classification Error: {}; Fraction of noise: {}; MSE-Loss:{}".format(np.round(RF_error[i], 3),
                                                                                           fraction_of_drawn_samples[i], eg))
         print("---------------------------------------------------------")
 
@@ -397,7 +397,7 @@ for i in range(0, len(nr_of_drawn_samples)):
         inputs = (X_train[j, :]).float()
         student.zero_grad()
         preds = student(inputs)
-        loss = HalfMSE(preds, targets)
+        loss = criterion(preds, targets)
         if j% 500 ==0: #print train loss every 100 steps
           print("Train loss: {}".format(loss))
         loss.backward()
@@ -410,12 +410,12 @@ for i in range(0, len(nr_of_drawn_samples)):
     with torch.no_grad():
         preds = student(X_val)
         preds = preds[:, 0]
-        eg = HalfMSE(preds, Y_val)
+        eg = criterion(preds, Y_val)
         # calculate the classification error with the predictions
         eg_class = 1 - torch.relu(torch.sign(preds) * Y_val)
         eg_class = eg_class.sum() / float(preds.shape[0])
         NN_error[i] = eg_class
-        print("Test Data: Generalized Classification Error: {}; Fraction of noise: {}; Loss:{}".format(np.round(NN_error[i], 3),
+        print("Test Data: Generalized Classification Error: {}; Fraction of noise: {}; MSE:{}".format(np.round(NN_error[i], 3),
                                                                                               fraction_of_drawn_samples[i],
                                                                                               eg))
         print("---------------------------------------------------------")
