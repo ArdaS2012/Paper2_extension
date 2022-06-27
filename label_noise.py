@@ -15,6 +15,66 @@ def HalfMSE(output, target):
     loss = (0.5) * torch.mean((output - target) ** 2)
     return loss
 
+#Neural Tanget
+class Student_NT(nn.Module):
+
+    def __init__(self, K, D, std=0.01):
+        """ initialisation of a student with:
+        - K hidden nodes
+        - N input dimensions """
+        print("Creating a Neural Network ")
+        super(Student_NT, self).__init__()
+        self.a0 = (torch.randn(1,1,K)) #.cuda()
+        a0 = torch.from_numpy(np.load('saved_values/a0.npy'))
+        self.a0 = a0
+        fc1_w = torch.from_numpy(np.load('saved_values/fc1.npy'))
+        fc2_w = torch.from_numpy(np.load('saved_values/fc2.npy'))
+        G = torch.from_numpy(np.load('saved_values/G.npy'))
+        self.G = G
+        self.g = nn.ReLU()
+        self.K = K
+        self.loss = nn.MSELoss()
+        #First layer weights are fixed!
+        # self.w = np.random.randn(D, K)
+        # norm = np.linalg.norm(self.w,axis=0,keepdims=True)
+        # self.w = self.w/(norm)
+        # self.w = torch.from_numpy(self.w)
+        self.w = fc1_w
+        self.w = self.w.float()
+        self.w = self.w #.cuda()
+        # self.w = self.w.T
+        self.fc1 = nn.Linear(D, K, bias=False)
+        self.fc1.weight = nn.Parameter(self.w, requires_grad=False)  # Fix initialized weight
+        self.fc2 = nn.Linear(K, 1, bias=True)
+        nn.init.normal_(fc2_w, std=std)
+        #torch.nn.init.xavier_uniform_(self.fc2.weight)
+        #torch.nn.init.xavier_uniform_(self.fc1.weight)
+        # self.G = (torch.randn(K, D)) #.cuda()
+        # np.save('/content/gdrive/MyDrive/G.npy', (self.G).detach().numpy())
+        # np.save('/content/gdrive/MyDrive/a0.npy', (self.a0).detach().numpy())
+        # np.save('/content/gdrive/MyDrive/fc1.npy', (self.fc1.weight).detach().numpy())
+        # np.save('/content/gdrive/MyDrive/fc2.npy', (self.fc2.weight).detach().numpy())
+
+    def forward(self, x):
+        # input to hidden
+        x_ = x #/ torch.mean(torch.sqrt(torch.linalg.norm(x, axis=0, keepdims=True)))
+        z = self.fc1(x)
+        q = self.g(z)
+        RF = self.fc2(q)
+        zero_one_mat = torch.sign(z)
+        # print(zero_one_mat.shape)
+        zero_one_mat_exp = torch.unsqueeze(zero_one_mat, 2)
+        # print(zero_one_mat_exp.shape)
+        zero_one_mat_exp = zero_one_mat_exp.reshape((zero_one_mat_exp.shape[0], 1, self.K))
+        U = torch.multiply(zero_one_mat_exp,self.a0)
+        q2 = torch.tensordot(U,self.G,dims=([2],[0]))
+        x_ = x_ #/ torch.linalg.norm(x_,axis=0,keepdims=True) # bigger norm input would cause the NT-matrix to dominate the output which lead to worse learning
+        temp = torch.unsqueeze(x_, 2)
+        aux_data = temp.reshape((temp.shape[0],1,temp.shape[1]))  # bs x 1 x d
+        temp = torch.multiply(q2, aux_data)
+        NT = temp.sum(2)  # bs x num_class
+        x = NT + RF
+        return x
 
 # 2 layer NN
 class Student(nn.Module):
