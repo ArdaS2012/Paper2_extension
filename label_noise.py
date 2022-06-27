@@ -58,7 +58,7 @@ class Student(nn.Module):
 
 
 # Oracle
-def oracle(X, mu):
+def oracle(X, mu,fraction):
     """
     This function implements the 'oracle' which is defined as a network "with knowledge of the means of
     the mixture that assigns to each input the label of the nearest mean".
@@ -76,11 +76,16 @@ def oracle(X, mu):
 
     cluster1 = np.hstack((ind1, ind2))
     cluster2 = np.hstack((ind3, ind4))
-
-    labels[labels == 0] = -1
-    labels[labels == 1] = -1
-    labels[labels == 2] = 1
-    labels[labels == 3] = 1
+    if fraction >= 50.0:
+        labels[labels == 0] = 1
+        labels[labels == 1] = 1
+        labels[labels == 2] = -1
+        labels[labels == 3] = -1
+    else:
+        labels[labels == 0] = -1
+        labels[labels == 1] = -1
+        labels[labels == 2] = 1
+        labels[labels == 3] = 1
 
     return labels
 
@@ -283,7 +288,7 @@ for i in range(0, len(nr_of_drawn_samples)):
     draw_index = np.random.choice(X.shape[0],int(nr_of_drawn_samples[i]),replace=False)
     Y_drawn = Y[draw_index] * (-1)
     Y[draw_index] = Y_drawn
-    labels = oracle(X, mu)
+    labels = oracle(X, mu,fraction_of_drawn_samples[i])
     ind1 = np.where(labels == 1)[0]
     ind2 = np.where(labels == -1)[0]
     oracle_error[i] = sklearn.metrics.zero_one_loss(Y, labels, normalize=True, sample_weight=None)

@@ -1,0 +1,22 @@
+import numpy as np
+from matplotlib import pyplot as plt
+fraction = np.loadtxt("fraction.txt")
+error_NN = np.loadtxt("2LNN_error.txt")
+error_RF = np.loadtxt("RF_error.txt")
+error_oracle = np.loadtxt("oracle_error.txt")
+
+plt.figure(figsize = (15, 7))
+plt.rcParams.update({'font.size': 16})
+plt.plot(fraction, error_NN,            color='black', linestyle='dashed', label='NN')
+plt.plot(fraction, error_RF,     color='red'  , linestyle='solid',  label='RF')
+plt.plot(fraction, error_oracle, color='blue' , linestyle='solid',  label='oracle')
+#plt.xscale('log')
+#plt.ylim([-0.01, 0.55])
+#plt.vlines(0.25, -0.01, 0.55, 'grey')
+#plt.vlines(0.3, -0.01, 0.55, 'grey')
+plt.title('Performance with label noise')
+plt.xlabel('Fraction of Label Noise')
+plt.ylabel('Classification Error')
+plt.legend()
+plt.show()
+print("x")
