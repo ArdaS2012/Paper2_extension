@@ -421,11 +421,11 @@ for i in range(0, len(nr_of_drawn_samples)):
         print("---------------------------------------------------------")
 print("NN Training is finished!")
 print("Save all results")
-with open('/home/apdl006/Practical/oracle_error.txt', 'w') as f:
+with open('/home/apdl007/Paper2_extension/oracle_error.txt', 'w') as f:
     np.savetxt(f, oracle_error)
-with open('/home/apdl006/Practical/2LNN_error.txt', 'w') as f:
+with open('/home/apdl007/Paper2_extension/2LNN_error.txt', 'w') as f:
     np.savetxt(f, NN_error)
-with open('/home/apdl006/Practical/RF_error.txt', 'w') as f:
+with open('/home/apdl007/Paper2_extension/RF_error.txt', 'w') as f:
     np.savetxt(f, RF_error)
-with open('/home/apdl006/Practical/fraction.txt', 'w') as f:
+with open('/home/apdl007/Paper2_extension/fraction.txt', 'w') as f:
         np.savetxt(f, fraction_of_drawn_samples)
