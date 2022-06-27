@@ -288,7 +288,7 @@ for i in range(0, len(nr_of_drawn_samples)):
     ind2 = np.where(labels == -1)[0]
     oracle_error[i] = sklearn.metrics.zero_one_loss(Y, labels, normalize=True, sample_weight=None)
     oracle_pred[i, :] = labels
-    print('Classifiaction error: {} for sigma: {}'.format(np.round(oracle_error[i], 3),fraction_of_drawn_samples[i]))
+    print('Classifiaction error: {} for Fraction of noise: {}'.format(np.round(oracle_error[i], 3),fraction_of_drawn_samples[i]))
 print("Oracle calcluations are finished!...")
 #label = [-1,1]
 #colors = ['red','blue']
@@ -353,8 +353,8 @@ for i in range(0, len(nr_of_drawn_samples)):
         eg_class = eg_class.sum() / float(preds.shape[0])
         # print("preds:{}, y_val:{}".format(preds,Y_val))
         RF_error[i] = eg_class
-        print("Test Data: Classification Error: {}; Variance: {}; halfMSE-Loss:{}".format(np.round(RF_error[i], 3),
-                                                                                          np.round(sigma[i], 3), eg))
+        print("Test Data: Classification Error: {}; Fraction of noise: {}; halfMSE-Loss:{}".format(np.round(RF_error[i], 3),
+                                                                                          fraction_of_drawn_samples[i], eg))
         print("---------------------------------------------------------")
 
 print("Random Features Training is finished!..")
@@ -415,8 +415,8 @@ for i in range(0, len(nr_of_drawn_samples)):
         eg_class = 1 - torch.relu(torch.sign(preds) * Y_val)
         eg_class = eg_class.sum() / float(preds.shape[0])
         NN_error[i] = eg_class
-        print("Test Data: Generalized Classification Error: {}; Variance: {}; Loss:{}".format(np.round(NN_error[i], 3),
-                                                                                              np.round(sigma[i], 3),
+        print("Test Data: Generalized Classification Error: {}; Fraction of noise: {}; Loss:{}".format(np.round(NN_error[i], 3),
+                                                                                              fraction_of_drawn_samples[i],
                                                                                               eg))
         print("---------------------------------------------------------")
 print("NN Training is finished!")
