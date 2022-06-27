@@ -266,7 +266,7 @@ def log_sigmas(num_sigmas):
     return sigma
 
 print("Start of script...")
-N = 5000
+N = 500
 dim_NN = 100
 dim_RF = 100
 dim_oracle = 100
