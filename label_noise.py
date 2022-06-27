@@ -270,7 +270,7 @@ N = 5000
 dim_NN = 100
 dim_RF = 100
 dim_oracle = 100
-sigma = 0.1
+sigma = 0.01
 nr_of_drawn_samples = np.round(np.linspace(0,N,num=30),0)
 fraction_of_drawn_samples = np.zeros((len(nr_of_drawn_samples)))
 ## ORACLE:
@@ -378,7 +378,7 @@ criterion = student.loss
 ######### iterate over the sigmas  ###################################
 ######################################################################
 for i in range(0, len(nr_of_drawn_samples)):
-    X, Y, m = make_GMM(dim=dim_NN, N=N, var=sigma[i], plot=False)
+    X, Y, m = make_GMM(dim=dim_NN, N=N, var=sigma, plot=False)
     fraction_of_drawn_samples[i] = (nr_of_drawn_samples[i] / N) * 100
     draw_index = np.random.choice(X.shape[0], int(nr_of_drawn_samples[i]), replace=False)
     Y_drawn = Y[draw_index] * (-1)
