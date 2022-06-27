@@ -281,7 +281,7 @@ dim_oracle = 1000
 sigma = 0.01
 nr_of_drawn_samples = np.round(np.linspace(0, N, num=30), 0)
 fraction_of_drawn_samples = np.zeros((len(nr_of_drawn_samples)))
-"""
+
 ## ORACLE:
 print("Run oracle....")
 oracle_pred = np.zeros((len(nr_of_drawn_samples), int(N)))
@@ -429,8 +429,7 @@ for i in range(0, len(nr_of_drawn_samples)):
                                                                                               eg))
         print("---------------------------------------------------------")
 """
-
-##Neural Tangent
+##Neural Tangent (NOT WORKING!!!)
 NT_error = np.zeros((len(nr_of_drawn_samples)))
 init_fn, apply_fn, kernel_fn = stax.serial(
     stax.Dense(12), stax.Relu(),
@@ -449,7 +448,6 @@ for i in range(0, len(nr_of_drawn_samples)):
     predict_fn = stax.predict.gradient_descent_mse_ensemble(kernel_fn, X_train, Y_train)
     preds = predict_fn(x_test=X_val, get='ntk')
     preds = torch.from_numpy(np.array(preds))
-    # print(preds)
     Y_val = torch.from_numpy(Y_val)
     with torch.no_grad():
         # preds = student(X_val)
@@ -467,13 +465,14 @@ for i in range(0, len(nr_of_drawn_samples)):
         NT_error[i] = eg_class
         print("Test Data: Classification Error: {}; Variance: {}; halfMSE-Loss:{}".format(np.round(NT_error[i], 3),fraction_of_drawn_samples[i],eg))
         print("---------------------------------------------------------")
-print("NN Training is finished!")
+print("NT Training is finished!")
+"""
 print("Save all results")
-with open('/home/apdl007/Paper2_extension/NT_error.txt', 'w') as f:
-    np.savetxt(f, NT_error)
-#with open('/home/apdl007/Paper2_extension/2LNN_error.txt', 'w') as f:
-#    np.savetxt(f, NN_error)
-#with open('/home/apdl007/Paper2_extension/RF_error.txt', 'w') as f:
-#    np.savetxt(f, RF_error)
-#with open('/home/apdl007/Paper2_extension/fraction.txt', 'w') as f:
-#    np.savetxt(f, fraction_of_drawn_samples)
+with open('/home/apdl007/Paper2_extension/oracle_error.txt', 'w') as f:
+    np.savetxt(f, oracle_error)
+with open('/home/apdl007/Paper2_extension/2LNN_error.txt', 'w') as f:
+    np.savetxt(f, NN_error)
+with open('/home/apdl007/Paper2_extension/RF_error.txt', 'w') as f:
+    np.savetxt(f, RF_error)
+with open('/home/apdl007/Paper2_extension/fraction.txt', 'w') as f:
+    np.savetxt(f, fraction_of_drawn_samples)
