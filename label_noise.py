@@ -266,10 +266,10 @@ def log_sigmas(num_sigmas):
     return sigma
 
 print("Start of script...")
-N = 500
-dim_NN = 100
-dim_RF = 100
-dim_oracle = 100
+N = 50000
+dim_NN = 1000
+dim_RF = 1000
+dim_oracle = 1000
 sigma = 0.01
 nr_of_drawn_samples = np.round(np.linspace(0,N,num=30),0)
 fraction_of_drawn_samples = np.zeros((len(nr_of_drawn_samples)))
